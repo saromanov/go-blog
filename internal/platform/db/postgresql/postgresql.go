@@ -6,8 +6,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	st "github.com/saromanov/selitra/backend/internal/storage"
-	structs "github.com/saromanov/selitra/backend/internal/structs/v1"
+	"github.com/saromanov/go-blog/internal/blog"
+	st "github.com/saromanov/go-blog/internal/platform/db"
+	"github.com/saromanov/go-blog/internal/user"
 )
 
 // storage implements db handling with Postgesql
@@ -16,26 +17,27 @@ type storage struct {
 }
 
 // Create provides init for postgesql storage
-func Create(s *structs.Config) (st.Storage, error) {
+func Create(s *st.Config) (st.Storage, error) {
 	if s == nil {
 		return nil, errors.New("config is not defined")
 	}
-	args := "dbname=selitra"
-	if s.DBName != "" && s.DBPassword != "" && s.DBUser != "" {
-		args += fmt.Sprintf(" user=%s dbname=%s password=%s", s.DBUser, s.DBName, s.DBPassword)
+	args := "dbname=goblog"
+	if s.Name != "" && s.Password != "" && s.User != "" {
+		args += fmt.Sprintf(" user=%s dbname=%s password=%s", s.User, s.Name, s.Password)
 	}
 	db, err := gorm.Open("postgres", args)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open db: %v", err)
 	}
-	db.AutoMigrate(&st.LogRequest{})
+	db.AutoMigrate(&user.User{})
+	db.AutoMigrate(&blog.Blog{})
 	return &storage{
 		db: db,
 	}, nil
 }
 
 // Insert provides inserting of data
-func (s *storage) Insert(m *st.LogRequest) error {
+func (s *storage) Insert(m interface{}) error {
 	err := s.db.Create(m).Error
 	if err != nil {
 		return fmt.Errorf("storage: unable to insert data: %v", err)
@@ -44,32 +46,7 @@ func (s *storage) Insert(m *st.LogRequest) error {
 }
 
 // Insert provides finding data
-func (s *storage) Search(sr *st.SearchRequest) ([]*st.LogRequest, error) {
-	var response []*st.LogRequest
-	err := s.makeQuery(s.db, sr).Find(&response).Error
-	if err != nil {
-		return nil, fmt.Errorf("storage: unable to find data: %v", err)
-	}
-	return response, nil
-}
-
-// makeQuery provides making of the query to Postgresql
-func (s *storage) makeQuery(db *gorm.DB, sr *st.SearchRequest) *gorm.DB {
-	if sr.FromTimestamp != 0 && sr.ToTimestamp != 0 {
-		db = db.Where("timestamp BETWEEN ? AND ?", sr.FromTimestamp, sr.ToTimestamp)
-	}
-	if sr.Name != "" {
-		db = db.Where("name=?", sr.Name)
-		return db
-	}
-	if sr.Service != "" {
-		db = db.Where("service=?", sr.Service)
-	}
-	return db
-}
-
-// Aggregate provides aggregation on the data
-func (s *storage) Aggregate(sr *st.AggregateSearchRequest) ([]*st.LogRequest, error) {
+func (s *storage) Search(sr interface{}) ([]interface{}, error) {
 	return nil, nil
 }
 
