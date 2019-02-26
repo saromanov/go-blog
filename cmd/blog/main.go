@@ -1,18 +1,23 @@
-// Package blog provides starting of the service from command line
-package blog
+package main
 
 import (
-	"os"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
-	log "github.com/sirupsen/logrus"
+
 	"github.com/saromanov/go-blog/internal/platform/db"
 	"github.com/saromanov/go-blog/internal/platform/db/postgresql"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
+
+// Config defines configuration for service
+type Config struct {
+	Host string `yaml:"host"`
+}
 
 // parseConfig provides parsing of the config .yml file
 func parseConfig(path string) (*Config, error) {
@@ -34,20 +39,18 @@ func setupService(cfg *Config) error {
 	log.WithFields(log.Fields{
 		"method": "setupService",
 	}).Info("Initialization of storage")
-	storage, err := postgresql.Create(&db.Config{
-
-	})
+	storage, err := postgresql.Create(&db.Config{})
 	if err != nil {
 		return fmt.Errorf("unable to setup storage: %v", err)
 	}
-
+	fmt.Println(storage)
 	log.WithFields(log.Fields{
 		"method": "setupService",
-	  }).Info("Initialization of server")
+	}).Info("Initialization of server")
 
 	api := http.Server{
-		Addr:           cfg.Host,
-		Handler:        handlers.Hanlde(shutdown, log, storage, authenticator),
+		Addr: cfg.Host,
+		//Handler:        handlers.Hanlde(shutdown, log, storage, authenticator),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -58,12 +61,12 @@ func setupService(cfg *Config) error {
 	go func() {
 		log.WithFields(log.Fields{
 			"method": "setupService",
-		  }).Infof("API listening")
+		}).Infof("API listening")
 		serverErrors <- api.ListenAndServe()
 	}()
 
 	select {
-	case err := <- serverErrors:
+	case err := <-serverErrors:
 		log.WithFields(log.Fields{
 			"method": "setupService",
 		}).Errorf("unable to setup server: %v", err)
