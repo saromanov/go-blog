@@ -33,6 +33,21 @@ func setupService() error {
 		return fmt.Errorf("unable to setup storage: %v", err)
 	}
 
+	api := http.Server{
+		Addr:           cfg.Web.APIHost,
+		Handler:        handlers.Hanlde(shutdown, log, storage, authenticator),
+		ReadTimeout:    cfg.ReadTimeout,
+		WriteTimeout:   cfg.WriteTimeout,
+		MaxHeaderBytes: 1 << 20,
+	}
+	serverErrors := make(chan error, 1)
+
+	// Start the service listening for requests.
+	go func() {
+		log.Printf("main : API Listening %s", cfg.Web.APIHost)
+		serverErrors <- api.ListenAndServe()
+	}()
+
 	return nil
 }
 
