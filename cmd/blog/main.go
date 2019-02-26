@@ -4,6 +4,7 @@ package blog
 import (
 	"fmt"
 	"github.com/saromanov/go-blog/internal/platform/db"
+	"github.com/saromanov/go-blog/internal/platform/db/postgresql"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
 )
@@ -21,6 +22,18 @@ func parseConfig(path string) (*structs.Config, error) {
 	}
 
 	return c, nil
+}
+
+// setupService provides setup of the all parts of the service
+func setupService() error {
+	storage, err := postgresql.Create(&db.Config{
+
+	})
+	if err != nil {
+		return fmt.Errorf("unable to setup storage: %v", err)
+	}
+
+	return nil
 }
 
 func main() {
