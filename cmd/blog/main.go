@@ -40,7 +40,7 @@ func setupService(cfg *Config) error {
 	log.WithFields(log.Fields{
 		"method": "setupService",
 	}).Info("Initialization of storage")
-	storage, err := postgresql.Create(&db.Config{})
+	storage, err := postgresql.New(&db.Config{})
 	if err != nil {
 		return fmt.Errorf("unable to setup storage: %v", err)
 	}

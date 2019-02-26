@@ -16,8 +16,8 @@ type storage struct {
 	db *gorm.DB
 }
 
-// Create provides init for postgesql storage
-func Create(s *st.Config) (st.Storage, error) {
+// New provides init for postgesql storage
+func New(s *st.Config) (st.Storage, error) {
 	if s == nil {
 		return nil, errors.New("config is not defined")
 	}
