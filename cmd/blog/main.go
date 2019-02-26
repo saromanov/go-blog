@@ -2,9 +2,12 @@
 package blog
 
 import (
+	"os"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"github.com/sirupsen/logrus"
+	"time"
+	log "github.com/sirupsen/logrus"
 	"github.com/saromanov/go-blog/internal/platform/db"
 	"github.com/saromanov/go-blog/internal/platform/db/postgresql"
 	"github.com/urfave/cli"
@@ -27,7 +30,7 @@ func parseConfig(path string) (*structs.Config, error) {
 }
 
 // setupService provides setup of the all parts of the service
-func setupService() error {
+func setupService(cfg *structs.Config) error {
 	log.WithFields(log.Fields{
 		"method": "setupService",
 	  }).Info("Initialization of storage")
@@ -45,8 +48,8 @@ func setupService() error {
 	api := http.Server{
 		Addr:           cfg.Web.APIHost,
 		Handler:        handlers.Hanlde(shutdown, log, storage, authenticator),
-		ReadTimeout:    cfg.ReadTimeout,
-		WriteTimeout:   cfg.WriteTimeout,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 	serverErrors := make(chan error, 1)
@@ -58,6 +61,13 @@ func setupService() error {
 		  }).Infof("API listening")
 		serverErrors <- api.ListenAndServe()
 	}()
+
+	select {
+	case err := <- serverErrors:
+		log.WithFields(log.Fields{
+			"method": "setupService",
+		}).Errorf("unable to setup server: %v", err)
+	}
 
 	return nil
 }
@@ -78,7 +88,7 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				if err := run(config); err != nil {
+				if err := setupService(config); err != nil {
 					panic(err)
 				}
 				return nil
