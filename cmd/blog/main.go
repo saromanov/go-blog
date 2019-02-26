@@ -3,6 +3,8 @@ package blog
 
 import (
 	"fmt"
+	"net/http"
+	"github.com/sirupsen/logrus"
 	"github.com/saromanov/go-blog/internal/platform/db"
 	"github.com/saromanov/go-blog/internal/platform/db/postgresql"
 	"github.com/urfave/cli"
@@ -26,12 +28,19 @@ func parseConfig(path string) (*structs.Config, error) {
 
 // setupService provides setup of the all parts of the service
 func setupService() error {
+	log.WithFields(log.Fields{
+		"method": "setupService",
+	  }).Info("Initialization of storage")
 	storage, err := postgresql.Create(&db.Config{
 
 	})
 	if err != nil {
 		return fmt.Errorf("unable to setup storage: %v", err)
 	}
+
+	log.WithFields(log.Fields{
+		"method": "setupService",
+	  }).Info("Initialization of server")
 
 	api := http.Server{
 		Addr:           cfg.Web.APIHost,
@@ -44,7 +53,9 @@ func setupService() error {
 
 	// Start the service listening for requests.
 	go func() {
-		log.Printf("main : API Listening %s", cfg.Web.APIHost)
+		log.WithFields(log.Fields{
+			"method": "setupService",
+		  }).Infof("API listening")
 		serverErrors <- api.ListenAndServe()
 	}()
 
@@ -52,6 +63,7 @@ func setupService() error {
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
 	app := cli.NewApp()
 	app.Name = "go-blog"
 	app.Usage = "example of blog service"
