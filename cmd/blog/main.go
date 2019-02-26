@@ -9,6 +9,7 @@ import (
 
 	"github.com/saromanov/go-blog/internal/platform/db"
 	"github.com/saromanov/go-blog/internal/platform/db/postgresql"
+	"github.com/saromanov/go-blog/internal/trace"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -44,6 +45,16 @@ func setupService(cfg *Config) error {
 		return fmt.Errorf("unable to setup storage: %v", err)
 	}
 	fmt.Println(storage)
+
+	log.WithFields(log.Fields{
+		"method": "setupService",
+	}).Info("Initialization of tracing")
+
+	tr, err := trace.New("localhost:2014")
+	if err != nil {
+		return fmt.Errorf("unable to init tracing: %v", err)
+	}
+	fmt.Println(tr)
 	log.WithFields(log.Fields{
 		"method": "setupService",
 	}).Info("Initialization of server")
