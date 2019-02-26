@@ -15,12 +15,12 @@ import (
 )
 
 // parseConfig provides parsing of the config .yml file
-func parseConfig(path string) (*structs.Config, error) {
+func parseConfig(path string) (*Config, error) {
 	yamlFile, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open config file: %v", err)
 	}
-	var c *structs.Config
+	var c *Config
 	err = yaml.Unmarshal(yamlFile, &c)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse .config.yml: %v", err)
@@ -30,10 +30,10 @@ func parseConfig(path string) (*structs.Config, error) {
 }
 
 // setupService provides setup of the all parts of the service
-func setupService(cfg *structs.Config) error {
+func setupService(cfg *Config) error {
 	log.WithFields(log.Fields{
 		"method": "setupService",
-	  }).Info("Initialization of storage")
+	}).Info("Initialization of storage")
 	storage, err := postgresql.Create(&db.Config{
 
 	})
@@ -46,7 +46,7 @@ func setupService(cfg *structs.Config) error {
 	  }).Info("Initialization of server")
 
 	api := http.Server{
-		Addr:           cfg.Web.APIHost,
+		Addr:           cfg.Host,
 		Handler:        handlers.Hanlde(shutdown, log, storage, authenticator),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
